@@ -1,6 +1,4 @@
 import sqlite3
-import bcrypt
-import json
 
 conn = sqlite3.connect('app.db')
 
@@ -29,49 +27,6 @@ def initialize_tables():
 	cursor.execute(posts_table_statement)
 	conn.commit()
 
-
-def user_register(username: str, password: str):
-	salt = bcrypt.gensalt()
-	hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-
-	username_exists = '''
-		SELECT * FROM users
-		WHERE username = ?
-		LIMIT 1;
-	'''
-
-	username_results = cursor.execute(username_exists, (username,))
-	exists = username_results.fetchone()
-
-	if exists:
-		print('This username already exists')
-	else:
-		insert_user = '''
-			INSERT INTO users (username, password)
-			VALUES (?,?)
-		'''
-
-		cursor.execute(insert_user, (username, hashed_password))
-		conn.commit()
-		print("User has been registered")
-
-
-def user_login(username: str, password: str):
-	user_query = '''
-		SELECT username, password from users
-		WHERE username = ?
-		LIMIT 1;
-	'''
-	
-	results = cursor.execute(user_query, (username,)).fetchone()
-
-	if not results:
-		return False
-	
-	db_name, hashed_pass = results
-
-	return username == db_name and bcrypt.checkpw(password.encode('utf-8'), hashed_pass)
-
 def get_user_id(username: str):
 	user_id_statement = '''
 		SELECT id FROM users
@@ -88,7 +43,7 @@ def get_user_id(username: str):
 
 	return user_id
 
-def create_post(title: str, content:str, user_id: int, is_logged_in: bool):
+def create_post(title: str, content: str, user_id: int, is_logged_in: bool):
 	if not is_logged_in:
 		return False
 
@@ -101,7 +56,7 @@ def create_post(title: str, content:str, user_id: int, is_logged_in: bool):
 	conn.commit()
 	return True
 
-def get_posts(user_id:int, is_logged_in:bool):
+def get_posts(user_id: int, is_logged_in: bool):
 	if not is_logged_in:
 		return False
 
@@ -114,5 +69,37 @@ def get_posts(user_id:int, is_logged_in:bool):
 	'''
 
 	posts = cursor.execute(fetch_posts_query, (user_id,)).fetchone
+	post_list = []
 
-	return posts
+	for i in posts:
+		(post_name, post_content, username,) = i
+		post_list.append({
+			'post_name': post_name,
+			'post_content': post_content,
+			'username': username
+		})
+	
+	return post_list
+
+def get_post(user_id: int, post_id: int, is_logged_in: bool):
+	if not is_logged_in:
+		return False
+
+	fetch_post_query = '''
+		SELECT posts.title, posts.content, users,username
+		FROM posts
+		INNER JOIN users
+		ON posts.user_id = users.id
+		WHERE users.id = ?
+		AND posts.id = ?
+		LIMIT 1;
+	'''
+
+	result = cursor.execute(fetch_post_query, (user_id, post_id)).fetchone()
+
+	if not result:
+		return "This post does not belong to you"
+
+	(post_name, post_content, username,) = result
+
+	return {'post_name': post_name, 'post_content': post_content, 'username': username}
