@@ -88,7 +88,7 @@ def get_user_id(username: str):
 
 	return user_id
 
-def create_post(title: str, content:str, user_id: str, is_logged_in: bool):
+def create_post(title: str, content:str, user_id: int, is_logged_in: bool):
 	if not is_logged_in:
 		return False
 
@@ -99,3 +99,20 @@ def create_post(title: str, content:str, user_id: str, is_logged_in: bool):
 
 	cursor.execute(insert_post_statement, (title, content, user_id,))
 	conn.commit()
+	return True
+
+def get_posts(user_id:int, is_logged_in:bool):
+	if not is_logged_in:
+		return False
+
+	fetch_posts_query = '''
+		SELECT posts.title, posts.content, users.username
+		FROM posts
+		INNER JOIN users
+		ON posts.user_id = users.id
+		WHERE users.id = ?;
+	'''
+
+	posts = cursor.execute(fetch_posts_query, (user_id,)).fetchone
+
+	return posts
