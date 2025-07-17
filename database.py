@@ -71,3 +71,31 @@ def user_login(username: str, password: str):
 	db_name, hashed_pass = results
 
 	return username == db_name and bcrypt.checkpw(password.encode('utf-8'), hashed_pass)
+
+def get_user_id(username: str):
+	user_id_statement = '''
+		SELECT id FROM users
+		WHERE username = ?
+		LIMIT 1;
+	'''
+
+	results = cursor.execute(user_id_statement, (username, )).fetchone()
+
+	if not results:
+		return False
+
+	(user_id,) = results
+
+	return user_id
+
+def create_post(title: str, content:str, user_id: str, is_logged_in: bool):
+	if not is_logged_in:
+		return False
+
+	insert_post_statement = '''
+		INSERT INTO posts (title, content, user_id)
+		VALUES (?, ?, ?);
+	'''
+
+	cursor.execute(insert_post_statement, (title, content, user_id,))
+	conn.commit()
