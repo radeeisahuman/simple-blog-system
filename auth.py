@@ -2,28 +2,29 @@ import bcrypt
 import json
 from database import cursor
 
-def user_register(username: str, password: str):
+def user_register(username: str, email:str, password: str):
 	salt = bcrypt.gensalt()
 	hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
 
 	username_exists = '''
 		SELECT * FROM users
 		WHERE username = ?
+		OR email = ?
 		LIMIT 1;
 	'''
 
-	username_results = cursor.execute(username_exists, (username,))
+	username_results = cursor.execute(username_exists, (username, email))
 	exists = username_results.fetchone()
 
 	if exists:
 		print('This username already exists')
 	else:
 		insert_user = '''
-			INSERT INTO users (username, password)
-			VALUES (?,?)
+			INSERT INTO users (username, email, password)
+			VALUES (?,?,?)
 		'''
 
-		cursor.execute(insert_user, (username, hashed_password))
+		cursor.execute(insert_user, (username, email, hashed_password))
 		conn.commit()
 		print("User has been registered")
 

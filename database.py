@@ -17,6 +17,7 @@ def initialize_tables():
 		CREATE TABLE IF NOT EXISTS posts (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			title TEXT NOT NULL UNIQUE,
+			email TEXT NOT NULL UNIQUE,
 			content TEXT NOT NULL,
 			user_id INTEGER,
 			FOREIGN KEY (user_id) REFERENCES users(id)
